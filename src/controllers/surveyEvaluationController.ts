@@ -4,6 +4,7 @@ import * as surveyEvaluationService from '../services/surveyEvaluationService';
 export const createEvaluation = async (req: Request, res: Response) => {
   try {
     const userId = req.user._id;
+    console.log('User ID:', userId); // Debugging line to check user ID
     const { session_id } = req.body;
     
     const result = await surveyEvaluationService.createEvaluation(userId, session_id);
@@ -122,6 +123,27 @@ export const submitEvaluationAnswer = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error submitting evaluation answer',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+export const getEvaluationBySessionId = async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user._id;
+
+    const result = await surveyEvaluationService.getEvaluationBySessionId(sessionId, userId);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(404).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving evaluation',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }

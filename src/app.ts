@@ -10,6 +10,7 @@ import connectDB from "./config/database";
 // Import routes
 import authRoutes from "./routes/authRoutes";
 import surveySessionRoutes from './routes/surveySessionRoutes';
+import surveyEvaluationRoutes from './routes/surveyEvaluationRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +36,7 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Routes
 app.use("/api/auth", authRoutes);
 app.use('/api/survey-sessions', surveySessionRoutes);
+app.use('/api/survey-evaluations', surveyEvaluationRoutes);
 
 // Base route
 app.get("/", (req: Request, res: Response) => {

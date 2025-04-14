@@ -11,7 +11,6 @@ export interface ISurveySession extends Document {
   user_id: mongoose.Types.ObjectId;
   status: 'IN_PROGRESS' | 'COMPLETED';
   responses: IResponse[];
-  current_question_index: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,7 +26,6 @@ const SurveySessionSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     status: {
       type: String,
@@ -35,21 +33,14 @@ const SurveySessionSchema = new Schema(
       default: 'IN_PROGRESS',
     },
     responses: [ResponseSchema],
-    current_question_index: {
-      type: Number,
-      default: 0,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-// Index to ensure each user can only have one IN_PROGRESS session
-SurveySessionSchema.index({ user_id: 1, status: 1 }, { 
-  unique: true, 
-  partialFilterExpression: { status: 'IN_PROGRESS' } 
-});
+// Change the index to only consider user_id
+SurveySessionSchema.index({ user_id: 1 }, { unique: true });
 
 const SurveySession = mongoose.model<ISurveySession>('SurveySession', SurveySessionSchema, 'webSurveySessions');
 export default SurveySession;

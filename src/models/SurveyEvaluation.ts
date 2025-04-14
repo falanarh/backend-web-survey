@@ -24,12 +24,10 @@ const SurveyEvaluationSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true
   },
   session_id: {
     type: Schema.Types.ObjectId,
     ref: 'SurveySession',
-    index: true
   },
   answers: {
     ease_of_use: { type: Number, min: 1, max: 7 },
@@ -40,7 +38,7 @@ const SurveyEvaluationSchema = new Schema({
     mental_effort: { type: Number, min: 1, max: 9 },
     overall_experience: { 
       type: String, 
-      maxlength: 1000 // Batasi panjang respons terbuka
+      maxlength: 1000
     }
   },
   completed: {
@@ -53,4 +51,11 @@ const SurveyEvaluationSchema = new Schema({
   }
 });
 
-export default mongoose.model<ISurveyEvaluation>('SurveyEvaluation', SurveyEvaluationSchema);
+// Definisi indeks
+SurveyEvaluationSchema.index({ user_id: 1 });
+SurveyEvaluationSchema.index({ session_id: 1 }, { 
+  unique: true,
+  partialFilterExpression: { session_id: { $exists: true } }
+});
+
+export default mongoose.model<ISurveyEvaluation>('SurveyEvaluation', SurveyEvaluationSchema, 'webSurveyEvaluations');

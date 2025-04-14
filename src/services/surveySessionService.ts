@@ -3,41 +3,40 @@ import User from "../models/User";
 
 export const createSession = async (userId: string) => {
   try {
-    // Check for existing IN_PROGRESS session
+    // Check for any existing session regardless of status
     const existingSession = await SurveySession.findOne({
-      user_id: userId,
-      status: "IN_PROGRESS",
+      user_id: userId
     });
 
     if (existingSession) {
       return {
         success: false,
-        message: "User already has an active survey session",
+        message: "User already has a survey session. Please complete or delete the existing session first.",
+        data: existingSession
       };
     }
 
     const session = await SurveySession.create({
       user_id: userId,
       status: "IN_PROGRESS",
-      responses: [],
-      current_question_index: 0,
+      responses: []
     });
 
     // Update user's active session
     await User.findByIdAndUpdate(userId, {
-      activeSurveySessionId: session._id,
+      activeSurveySessionId: session._id
     });
 
     return {
       success: true,
-      data: session,
+      data: session
     };
   } catch (error) {
     console.error("Error in createSession:", error);
     return {
       success: false,
       message: "Error creating session",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 };
@@ -131,31 +130,31 @@ export const deleteSession = async (sessionId: string, userId: string) => {
   try {
     const session = await SurveySession.findOneAndDelete({
       _id: sessionId,
-      user_id: userId,
+      user_id: userId
     });
 
     if (!session) {
       return {
         success: false,
-        message: "Survey session not found",
+        message: "Survey session not found"
       };
     }
 
-    // If this was the active session, clear it from user
+    // Always clear the activeSurveySessionId from user when deleting session
     await User.findByIdAndUpdate(userId, {
-      $unset: { activeSurveySessionId: "" },
+      $unset: { activeSurveySessionId: "" }
     });
 
     return {
       success: true,
-      message: "Survey session deleted successfully",
+      message: "Survey session deleted successfully"
     };
   } catch (error) {
     console.error("Error in deleteSession:", error);
     return {
       success: false,
       message: "Error deleting session",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error"
     };
   }
 };
@@ -166,6 +165,7 @@ export const submitResponse = async (
   response: IResponse
 ) => {
   try {
+    // Find the session
     const session = await SurveySession.findOne({
       _id: sessionId,
       user_id: userId,
@@ -179,10 +179,30 @@ export const submitResponse = async (
       };
     }
 
-    // Add response and increment question index
-    session.responses.push(response);
-    session.current_question_index += 1;
+    // Check if a response with this question code already exists
+    const existingResponseIndex = session.responses.findIndex(
+      (r) => r.question_code === response.question_code
+    );
 
+    if (existingResponseIndex !== -1) {
+      console.log("Updating existing response");
+      // Update existing response
+      session.responses[existingResponseIndex].valid_response = response.valid_response;
+    } else {
+      console.log("Adding new response");
+      // Add new response
+      session.responses.push({
+        question_code: response.question_code,
+        valid_response: response.valid_response
+      });
+    }
+
+    // Sort responses by question_code in ascending order
+    session.responses.sort((a, b) => 
+      a.question_code.localeCompare(b.question_code)
+    );
+
+    // Save the updated session
     await session.save();
 
     return {

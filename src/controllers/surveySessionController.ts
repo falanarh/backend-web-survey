@@ -113,10 +113,23 @@ export const submitResponse = async (req: Request, res: Response) => {
     const userId = req.user._id;
     const { question_code, valid_response } = req.body;
 
-    const result = await surveySessionService.submitResponse(id, userId, {
+    if (!question_code || valid_response === undefined) {
+      res.status(400).json({
+        success: false,
+        message: "Question code and response are required"
+      });
+    }
+
+    const response = {
       question_code,
-      valid_response,
-    });
+      valid_response
+    };
+
+    const result = await surveySessionService.submitResponse(
+      id,
+      userId,
+      response
+    );
 
     if (result.success) {
       res.json(result);
