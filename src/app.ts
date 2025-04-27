@@ -28,7 +28,18 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Middleware
 app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
+// Middleware
+app.use(
+  cors({
+    origin: [
+      'https://your-frontend-domain.vercel.app', 
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 app.use(morgan("dev")); // HTTP request logger
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
