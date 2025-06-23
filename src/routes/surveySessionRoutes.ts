@@ -5,7 +5,8 @@ import {
   getAllUserSessions,
   updateSurveySession,
   deleteSurveySession,
-  submitResponse
+  submitResponse,
+  completeSurveySession
 } from '../controllers/surveySessionController';
 import { protect } from '../middleware/authMiddleware';
 
@@ -19,5 +20,6 @@ router.get('/:id', getSurveySession);
 router.put('/:id', updateSurveySession);
 router.delete('/:id', deleteSurveySession);
 router.post('/:id/submit-response', submitResponse);
+router.post('/:id/complete', completeSurveySession);
 
 export default router;

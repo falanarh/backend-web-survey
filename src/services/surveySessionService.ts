@@ -1,42 +1,88 @@
 import SurveySession, { IResponse } from "../models/SurveySession";
 import User from "../models/User";
 
+const QUESTION_CODES = [
+  "KR001",
+  "KR002",
+  "KR003",
+  "KR004",
+  "KR005",
+  "KR006",
+  "S001",
+  "S002",
+  "S003",
+  "S004",
+  "S005",
+  "S006",
+  "S007",
+  "S008",
+  "S009",
+  "S010",
+  "S011",
+  "S012",
+  "S013",
+  "S014",
+  "S015",
+  "S016",
+  "S017",
+  "S018",
+  "S019",
+  "S020",
+  "S021",
+  "S022",
+  "S023",
+  "S024",
+  "S025",
+  "S026",
+  "S027",
+  "S028",
+  "S029",
+  "UCODE",
+];
+
 export const createSession = async (userId: string) => {
   try {
     // Check for any existing session regardless of status
     const existingSession = await SurveySession.findOne({
-      user_id: userId
+      user_id: userId,
     });
 
     if (existingSession) {
       return {
         success: false,
-        message: "User already has a survey session. Please complete or delete the existing session first.",
-        data: existingSession
+        message:
+          "User already has a survey session. Please complete or delete the existing session first.",
+        data: existingSession,
       };
     }
+
+    // Inisialisasi responses dengan initial value ""
+    const initialResponses = QUESTION_CODES.map((code) => ({
+      question_code: code,
+      valid_response: "",
+    }));
 
     const session = await SurveySession.create({
       user_id: userId,
       status: "IN_PROGRESS",
-      responses: []
+      responses: initialResponses,
     });
 
     // Update user's active session
     await User.findByIdAndUpdate(userId, {
-      activeSurveySessionId: session._id
+      activeSurveySessionId: session._id,
     });
 
     return {
       success: true,
-      data: session
+      data: session,
     };
   } catch (error) {
     console.error("Error in createSession:", error);
     return {
       success: false,
       message: "Error creating session",
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };
@@ -130,31 +176,31 @@ export const deleteSession = async (sessionId: string, userId: string) => {
   try {
     const session = await SurveySession.findOneAndDelete({
       _id: sessionId,
-      user_id: userId
+      user_id: userId,
     });
 
     if (!session) {
       return {
         success: false,
-        message: "Survey session not found"
+        message: "Survey session not found",
       };
     }
 
     // Always clear the activeSurveySessionId from user when deleting session
     await User.findByIdAndUpdate(userId, {
-      $unset: { activeSurveySessionId: "" }
+      $unset: { activeSurveySessionId: "" },
     });
 
     return {
       success: true,
-      message: "Survey session deleted successfully"
+      message: "Survey session deleted successfully",
     };
   } catch (error) {
     console.error("Error in deleteSession:", error);
     return {
       success: false,
       message: "Error deleting session",
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };
@@ -162,7 +208,7 @@ export const deleteSession = async (sessionId: string, userId: string) => {
 export const submitResponse = async (
   sessionId: string,
   userId: string,
-  response: IResponse
+  response: IResponse & { response_time?: number }
 ) => {
   try {
     // Find the session
@@ -185,20 +231,22 @@ export const submitResponse = async (
     );
 
     if (existingResponseIndex !== -1) {
-      console.log("Updating existing response");
       // Update existing response
-      session.responses[existingResponseIndex].valid_response = response.valid_response;
+      session.responses[existingResponseIndex].valid_response =
+        response.valid_response;
+      session.responses[existingResponseIndex].response_time =
+        response.response_time ?? session.responses[existingResponseIndex].response_time;
     } else {
-      console.log("Adding new response");
       // Add new response
       session.responses.push({
         question_code: response.question_code,
-        valid_response: response.valid_response
+        valid_response: response.valid_response,
+        response_time: response.response_time ?? 0,
       });
     }
 
     // Sort responses by question_code in ascending order
-    session.responses.sort((a, b) => 
+    session.responses.sort((a, b) =>
       a.question_code.localeCompare(b.question_code)
     );
 
@@ -214,6 +262,66 @@ export const submitResponse = async (
     return {
       success: false,
       message: "Error submitting response",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};
+
+export const completeSession = async (sessionId: string, userId: string) => {
+  try {
+    const session = await SurveySession.findOne({
+      _id: sessionId,
+      user_id: userId,
+      status: "IN_PROGRESS",
+    });
+
+    if (!session) {
+      return {
+        success: false,
+        message: "Survey session not found or already completed",
+      };
+    }
+
+    const totalQuestions = session.responses.length;
+    const item_nonresponse = session.responses.filter(
+      r => r.valid_response === "" || r.valid_response === null || r.valid_response === undefined
+    ).length;
+    const dont_know_response = session.responses.filter(
+      r => typeof r.valid_response === "string" && r.valid_response.toLowerCase() === "tidak tahu"
+    ).length;
+    const response_times = session.responses
+      .map(r => typeof r.response_time === "number" ? r.response_time : 0)
+      .filter(rt => rt > 0);
+    const avg_response_time = response_times.length > 0
+      ? response_times.reduce((a, b) => a + b, 0) / response_times.length
+      : 0;
+
+    // is_breakoff: true jika ada item nonresponse
+    const is_breakoff = item_nonresponse > 0;
+
+    session.status = "COMPLETED";
+    session.metrics = {
+      is_breakoff,
+      avg_response_time,
+      item_nonresponse,
+      dont_know_response
+    };
+
+    await session.save();
+
+    await User.findByIdAndUpdate(userId, {
+      $unset: { activeSurveySessionId: "" },
+    });
+
+    return {
+      success: true,
+      data: session,
+    };
+  } catch (error) {
+    console.error("Error in completeSession:", error);
+    return {
+      success: false,
+      message: "Error completing session",
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }

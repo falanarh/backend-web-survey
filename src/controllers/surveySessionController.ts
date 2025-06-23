@@ -144,3 +144,24 @@ export const submitResponse = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const completeSurveySession = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const result = await surveySessionService.completeSession(id, userId);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error completing survey session",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
