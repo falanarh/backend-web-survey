@@ -36,6 +36,7 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'https://your-frontend-domain.vercel.app', // Update this with your actual frontend domain
+      'https://wisnus-web-survey.vercel.app',
       'http://localhost:3000',
       'http://localhost:3001'
     ].filter(Boolean); // Remove undefined values
