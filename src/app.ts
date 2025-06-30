@@ -29,18 +29,32 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Middleware
 app.use(helmet()); // Security headers
-// Middleware
-app.use(
-  cors({
-    origin: [
-      'https://your-frontend-domain.vercel.app', 
+
+// CORS configuration
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: Function) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'https://your-frontend-domain.vercel.app', // Update this with your actual frontend domain
       'http://localhost:3000',
       'http://localhost:3001'
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+    ].filter(Boolean); // Remove undefined values
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(morgan("dev")); // HTTP request logger
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies

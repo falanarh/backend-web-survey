@@ -1,13 +1,15 @@
 {
   "name": "backend-web-survey",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "api/index.ts",
   "scripts": {
     "start": "node dist/app.js",
     "dev": "nodemon src/app.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "vercel-build": "tsc",
+    "vercel-dev": "ts-node src/app.ts"
   },
   "keywords": [],
   "author": "",

@@ -25,6 +25,42 @@ npm run dev
 npm run build
 ```
 
+## Deployment
+
+### Deploy to Vercel
+
+This project is configured for deployment to Vercel. See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
+
+#### Quick Deploy
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy
+vercel --prod
+```
+
+#### Using Scripts
+```bash
+# Windows
+deploy.bat --prod
+
+# Linux/Mac
+./deploy.sh --prod
+```
+
+### Environment Variables for Production
+Set these in Vercel Dashboard:
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - JWT secret key
+- `NODE_ENV` - Set to "production"
+- `FRONTEND_URL` - Your frontend domain
+- `GOOGLE_CLIENT_ID` - Google OAuth Client ID (if using)
+- `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret (if using)
+
 ## API Routes
 
 ### Auth Routes
