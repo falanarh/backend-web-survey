@@ -21,14 +21,13 @@ export const createEvaluation = async (userId: string, sessionId?: string) => {
       // Verify the session exists and belongs to user
       const session = await SurveySession.findOne({
         _id: sessionId,
-        user_id: userId,
-        status: "COMPLETED" // Only completed sessions can be evaluated
+        user_id: userId
       });
 
       if (!session) {
         return {
           success: false,
-          message: "Survey session not found or not completed"
+          message: "Survey session not found"
         };
       }
     }
