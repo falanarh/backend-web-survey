@@ -44,7 +44,7 @@ const SurveySessionSchema = new Schema(
     },
     responses: [ResponseSchema],
     metrics: {
-      is_breakoff: { type: Boolean, default: false },
+      is_breakoff: { type: Boolean, default: true },
       avg_response_time: { type: Number, default: 0 },
       item_nonresponse: { type: Number, default: 0 },
       dont_know_response: { type: Number, default: 0 }

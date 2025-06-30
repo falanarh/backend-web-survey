@@ -296,8 +296,8 @@ export const completeSession = async (sessionId: string, userId: string) => {
       ? response_times.reduce((a, b) => a + b, 0) / response_times.length
       : 0;
 
-    // is_breakoff: true jika ada item nonresponse
-    const is_breakoff = item_nonresponse > 0;
+    // is_breakoff: false karena user menyelesaikan survei
+    const is_breakoff = false;
 
     session.status = "COMPLETED";
     session.metrics = {
