@@ -20,6 +20,10 @@ export interface ISurveySession extends Document {
   status: 'IN_PROGRESS' | 'COMPLETED';
   responses: IResponse[];
   metrics?: IResponseMetrics;
+  time_consumed: {
+    karakteristik: number;
+    survei: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,6 +52,10 @@ const SurveySessionSchema = new Schema(
       avg_response_time: { type: Number, default: 0 },
       item_nonresponse: { type: Number, default: 0 },
       dont_know_response: { type: Number, default: 0 }
+    },
+    time_consumed: {
+      karakteristik: { type: Number, default: 0 },
+      survei: { type: Number, default: 0 }
     }
   },
   {

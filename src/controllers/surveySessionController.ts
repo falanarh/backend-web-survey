@@ -165,3 +165,25 @@ export const completeSurveySession = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const updateTimeConsumed = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const { karakteristik, survei } = req.body;
+
+    if (typeof karakteristik !== 'number' || typeof survei !== 'number') {
+      res.status(400).json({ success: false, message: 'karakteristik dan survei harus berupa number (ms)' });
+      return;
+    }
+
+    const result = await surveySessionService.updateTimeConsumed(id, userId, karakteristik, survei);
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

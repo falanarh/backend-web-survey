@@ -326,3 +326,58 @@ export const completeSession = async (sessionId: string, userId: string) => {
     };
   }
 };
+
+export const updateTimeConsumed = async (
+  sessionId: string,
+  userId: string,
+  karakteristik: number,
+  survei: number
+) => {
+  try {
+    const session = await SurveySession.findOne({ _id: sessionId, user_id: userId });
+    if (!session) {
+      return { success: false, message: 'Survey session not found' };
+    }
+
+    // Hitung jumlah pertanyaan per tab berdasarkan kode pertanyaan
+    const karakteristikQuestions = session.responses.filter(r => r.question_code.startsWith('KR')).length;
+    console.log("karakteristikQuestions", karakteristikQuestions);
+    const surveiQuestions = session.responses.filter(r => r.question_code.startsWith('S')).length;
+    console.log("surveiQuestions", surveiQuestions);
+
+    // Hitung avg_response_time per tab
+    const avg_response_time_karakteristik = karakteristikQuestions > 0 ? parseFloat((karakteristik / karakteristikQuestions).toFixed(2)) : 0;
+    const avg_response_time_survei = surveiQuestions > 0 ? parseFloat((survei / surveiQuestions).toFixed(2)) : 0;
+
+    // Update session dengan time_consumed dan avg_response_time
+    const updatedSession = await SurveySession.findOneAndUpdate(
+      { _id: sessionId, user_id: userId },
+      {
+        $set: {
+          'time_consumed.karakteristik': karakteristik,
+          'time_consumed.survei': survei,
+          'metrics.avg_response_time': avg_response_time_survei // Gunakan avg dari tab survei sebagai default
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedSession) {
+      return { success: false, message: 'Failed to update session' };
+    }
+
+    return { 
+      success: true, 
+      data: {
+        time_consumed: updatedSession.time_consumed,
+        avg_response_time: updatedSession.metrics?.avg_response_time || 0,
+        karakteristik_questions: karakteristikQuestions,
+        survei_questions: surveiQuestions,
+        avg_response_time_karakteristik,
+        avg_response_time_survei
+      }
+    };
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
