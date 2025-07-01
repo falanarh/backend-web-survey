@@ -289,12 +289,14 @@ export const completeSession = async (sessionId: string, userId: string) => {
     const dont_know_response = session.responses.filter(
       r => typeof r.valid_response === "string" && r.valid_response.toLowerCase() === "tidak tahu"
     ).length;
-    const response_times = session.responses
-      .map(r => typeof r.response_time === "number" ? r.response_time : 0)
-      .filter(rt => rt > 0);
-    const avg_response_time = response_times.length > 0
-      ? response_times.reduce((a, b) => a + b, 0) / response_times.length
-      : 0;
+    // const response_times = session.responses
+    //   .map(r => typeof r.response_time === "number" ? r.response_time : 0)
+    //   .filter(rt => rt > 0);
+    // const avg_response_time = response_times.length > 0
+    //   ? response_times.reduce((a, b) => a + b, 0) / response_times.length
+    //   : 0;
+
+    const avg_response_time = session.metrics?.avg_response_time || 0;
 
     // is_breakoff: false karena user menyelesaikan survei
     const is_breakoff = false;
@@ -341,13 +343,32 @@ export const updateTimeConsumed = async (
 
     // Hitung jumlah pertanyaan per tab berdasarkan kode pertanyaan
     const karakteristikQuestions = session.responses.filter(r => r.question_code.startsWith('KR')).length;
-    console.log("karakteristikQuestions", karakteristikQuestions);
     const surveiQuestions = session.responses.filter(r => r.question_code.startsWith('S')).length;
-    console.log("surveiQuestions", surveiQuestions);
 
-    // Hitung avg_response_time per tab
-    const avg_response_time_karakteristik = karakteristikQuestions > 0 ? parseFloat((karakteristik / karakteristikQuestions).toFixed(2)) : 0;
-    const avg_response_time_survei = surveiQuestions > 0 ? parseFloat((survei / surveiQuestions).toFixed(2)) : 0;
+    // Validasi agar tidak membagi dengan nol
+    const avg_response_time_karakteristik = karakteristikQuestions > 0 && karakteristik > 0
+      ? parseFloat((karakteristik / karakteristikQuestions).toFixed(2))
+      : 0;
+    const avg_response_time_survei = surveiQuestions > 0 && survei > 0
+      ? parseFloat((survei / surveiQuestions).toFixed(2))
+      : 0;
+
+    // Hitung avg_response_time gabungan secara akurat
+    // let avg_response_time = 0;
+    // if (avg_response_time_karakteristik > 0 && avg_response_time_survei > 0) {
+    //   avg_response_time = parseFloat(((avg_response_time_karakteristik + avg_response_time_survei) / 2).toFixed(2));
+    // } else if (avg_response_time_karakteristik > 0) {
+    //   avg_response_time = avg_response_time_karakteristik;
+    // } else if (avg_response_time_survei > 0) {
+    //   avg_response_time = avg_response_time_survei;
+    // }
+
+    const avg_response_time = (karakteristikQuestions + surveiQuestions) > 0
+      ? parseFloat(((avg_response_time_karakteristik * karakteristikQuestions + avg_response_time_survei * surveiQuestions) / (karakteristikQuestions + surveiQuestions)).toFixed(2))
+      : 0;
+
+    // Logging untuk debugging
+    console.log({ karakteristik, survei, karakteristikQuestions, surveiQuestions, avg_response_time_karakteristik, avg_response_time_survei, avg_response_time });
 
     // Update session dengan time_consumed dan avg_response_time
     const updatedSession = await SurveySession.findOneAndUpdate(
@@ -356,7 +377,7 @@ export const updateTimeConsumed = async (
         $set: {
           'time_consumed.karakteristik': karakteristik,
           'time_consumed.survei': survei,
-          'metrics.avg_response_time': avg_response_time_survei // Gunakan avg dari tab survei sebagai default
+          'metrics.avg_response_time': avg_response_time
         }
       },
       { new: true }
@@ -366,8 +387,8 @@ export const updateTimeConsumed = async (
       return { success: false, message: 'Failed to update session' };
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: {
         time_consumed: updatedSession.time_consumed,
         avg_response_time: updatedSession.metrics?.avg_response_time || 0,
