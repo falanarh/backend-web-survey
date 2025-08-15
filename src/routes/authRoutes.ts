@@ -8,6 +8,7 @@ import {
   getUserProfile, 
   logoutUser 
 } from '../controllers/authController';
+import { getCombinedData, getAllCombinedData } from '../controllers/combinedDataController';
 import { protect } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -46,5 +47,9 @@ router.get('/profile', protect, getUserProfile);
  * @access  Public
  */
 router.post('/logout', logoutUser);
+
+// Tambahkan endpoint baru untuk gabungan data user, survey session, dan survey evaluation
+router.get('/combined-data/:userId', getCombinedData);
+router.get('/combined-data', getAllCombinedData);
 
 export default router;

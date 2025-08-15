@@ -36,6 +36,7 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'http://localhost:3000',
+      'http://localhost:3001',
     ].filter(Boolean); // Remove undefined values
     
     // Allow requests with no origin (like mobile apps or curl requests)
